@@ -142,8 +142,10 @@ the favourites (the folder itself stays on the disk).
   GitHub whether there is a newer version and shows a link in the corner of
   the window. Click it to update: the program downloads the new version,
   closes, installs it and opens again — your settings stay. If something
-  goes wrong, the download page opens instead. To check by hand: **Help →
-  Check for updates**.
+  goes wrong, the download page opens instead. Version 2.1.0 and earlier
+  only open the page: install the next version by hand once, and every
+  update after that is one click. To check by hand: **Help → Check for
+  updates**.
 - **Settings → Reset settings** — everything back as after installing.
 
 ## Keyboard shortcuts

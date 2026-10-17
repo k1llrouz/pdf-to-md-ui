@@ -9,9 +9,11 @@
   without asking anything and opens it again. The install folder, language,
   shortcuts and context menu entry stay as they were. If the download or
   the installer fails, the release page opens as before. A copy run from
-  source or from a build folder still just opens the page. Version 2.1.0
-  and earlier only know how to open the page: the version after it has to
-  be installed by hand once, and the updates after that install themselves.
+  source or from a build folder still just opens the page. It works in any
+  install folder - the one the previous version was installed in is kept -
+  and needs no administrator rights. **If you have 2.1.0 or earlier, install
+  the next version by hand once** (the old program only opens the download
+  page); after that, every update is one click.
 - The installer names its AppId explicitly (the same value it had
   implicitly), so a new version always finds the installed one.
 
