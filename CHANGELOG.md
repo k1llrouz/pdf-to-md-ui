@@ -1,6 +1,8 @@
 # Changes
 
-## Unreleased
+## 2.2.0
+
+The program now updates itself in one click.
 
 - **The program updates itself.** Clicking "↑ Version X is available" (or
   Yes in Help → Check for updates) in the installed program downloads the

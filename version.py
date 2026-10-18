@@ -5,4 +5,4 @@ tag that does not match this - so the installer and the program can never
 claim different versions.
 """
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"

@@ -42,6 +42,11 @@
   "update.ask": "È disponibile la versione {version} — hai la {current}. Aprire la pagina di download?",
   "update.latest": "Hai l’ultima versione ({version}).",
   "update.failed": "Impossibile cercare aggiornamenti. Controlla la connessione a internet e riprova.",
+  "update.install_tooltip": "Scarica e installa l’aggiornamento",
+  "update.ask_install": "È disponibile la versione {version} — hai la {current}. Scaricarla e installarla ora? Il programma si chiuderà e si riaprirà a aggiornamento completato.",
+  "update.downloading": "Download della versione {version}…",
+  "update.busy": "È in corso una conversione. Aspetta che finisca, poi installa l’aggiornamento.",
+  "update.install_failed": "Impossibile aggiornare automaticamente. Si aprirà la pagina di download: scarica da lì il programma di installazione e avvialo.",
 
   "files.section": "File di origine",
   "files.drop_hint": "Trascina qui dei PDF o una cartella — oppure fai clic per scegliere",
