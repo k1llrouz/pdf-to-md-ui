@@ -8,8 +8,8 @@ Fixes for updating from inside the program.
   installer only added and overwrote files, so the old package's version
   file stayed next to the new one (and the old veraPDF patch folder with
   it). It now clears the program's own files before installing; settings
-  are kept. Copies updated to 2.2.1 still show "2.5.13" until the next
-  update, though they already run 2.5.15.
+  are kept. Updating 2.2.1 to 2.2.2 this way clears the leftovers, so
+  About shows 2.5.15.
 - **The update download window** was too narrow and cut the percentage off.
   It is wider now, with the percentage next to the text.
 
