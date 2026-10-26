@@ -46,8 +46,9 @@ jobs:
           pip install -r requirements-dev.txt pyinstaller
 
       # Before anything is built: the suite covers the batch loop, settings,
-      # and the converter's real output - including the veraPDF memory patch,
-      # which the installer must not ship without.
+      # and the converter's real output - including a page of 3000 strokes in
+      # 128 MB, so a release that brings back veraPDF's line-art memory
+      # problem never ships.
       # A release (a v* tag) also needs every language translated in full;
       # in between, only English and Russian have to keep up.
       - name: Run tests
@@ -84,18 +85,6 @@ jobs:
             Write-Error "opendataloader-pdf jar missing from dist/ - collect_all did not pick up the backend."
           }
           $jars | ForEach-Object { Write-Host $_.FullName }
-
-      # The veraPDF line-art patch (patches/README.md) has to travel with the
-      # app: without it plot-heavy datasheets run out of memory.
-      - name: Verify the veraPDF patch was bundled
-        shell: pwsh
-        run: |
-          $patch = Get-ChildItem -Path "dist" -Recurse -Filter "ChunkParser.class" |
-                   Where-Object { $_.FullName -like "*patches*" }
-          if (-not $patch) {
-            Write-Error "patches/verapdf missing from dist/ - check the datas entry in app.spec."
-          }
-          $patch | ForEach-Object { Write-Host $_.FullName }
 
       # The hidden-text switch (patches/README.md): without it "Drop hidden
       # text" quietly leaves invisible and white-on-white text in.

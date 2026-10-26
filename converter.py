@@ -70,9 +70,11 @@ SPACE_RATIO_DEFAULT = 0.17
 
 # Content safety filters to switch off. Hidden-, tiny- and off-page-text checks
 # cost real time on pages with plots, where axis labels and ticks run into the
-# thousands. Spelled out rather than "all": 2.5.13 added a "background" filter
-# that "all" now switches off too, and the datasheet results were checked with
-# it on. Whether dropping it helps is a separate, measured decision.
+# thousands. Spelled out rather than "all": that would also switch off the
+# "background" filter, which only removes large vector shapes (LineArtChunk
+# over half the page in one direction - never text), and the datasheet results
+# were checked with it on. Whether dropping it helps is a separate, measured
+# decision.
 CONTENT_SAFETY_OFF = "hidden-text,off-page,tiny,hidden-ocg"
 
 # Suffixes the converter appends to the input name for the PDFs it writes.
@@ -142,38 +144,20 @@ def use_bundled_jre() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# veraPDF line-art patch - see patches/README.md
+# Hidden-text switch - see patches/README.md
 # --------------------------------------------------------------------------- #
 
-# veraPDF, the PDF parser opendataloader-pdf is built on, rewrote its line-art
-# handling in the version bundled since 2.5.9. Output is byte-for-byte the
-# same, but memory grows steeply with the number of separate strokes on a
-# page: a 48-page TI datasheet that 2.5.8 converts in 512 MB needs about 14 GB.
-# Putting the previous ChunkParser in front of the jar on the classpath brings
-# it back to 3 s in 1 GB. The jar itself is not modified.
-PATCH_ROOT = Path(__file__).resolve().parent / "patches" / "verapdf"
-PATCHED_CLASS = "org/verapdf/gf/model/factory/chunks/ChunkParser.class"
-
-# The ChunkParser the patch was measured against, from opendataloader-pdf
-# 2.5.13. Any other jar runs untouched: a newer release may have fixed the
-# problem, or changed the code around it so that the old class no longer fits.
-PATCH_TARGETS = {
-    "4de60c82e273ffdecdc791f6a5645f055591f450032ce4f6a2cdb12e7dd528a1",
-}
-
-_PATCH_CACHE: dict[str, tuple[str, str] | None] = {}
-
-# The hidden-text switch (patches/README.md). opendataloader-pdf can drop text
-# a reader cannot see - it renders the page and compares the text with what is
-# behind it - but 2.5.13 leaves that filter off and its CLI can only switch it
-# off. This FilterConfig takes its default from a system property instead.
+# opendataloader-pdf can drop text a reader cannot see - it renders the page
+# and compares the text with what is behind it - but 2.5.15 leaves that filter
+# off and its CLI can only switch it off. This FilterConfig takes its default
+# from a system property instead.
 HIDDEN_PATCH_ROOT = Path(__file__).resolve().parent / "patches" / "hidden-text"
 HIDDEN_PATCHED_CLASS = "org/opendataloader/pdf/api/FilterConfig.class"
 HIDDEN_PROPERTY = "-Dopendataloader.filterHiddenText=true"
-# FilterConfig as shipped in opendataloader-pdf 2.5.13, the source the patch
+# FilterConfig as shipped in opendataloader-pdf 2.5.15, the source the patch
 # was compiled from. Another jar gets no patch: its FilterConfig may differ.
 HIDDEN_PATCH_TARGETS = {
-    "fdb56dd194bc4bf8cab83b07b12d50b43ff30bb97c8b2b4d5befeeb1d48f7c51",
+    "d2efb4ed6e481eb84b422d56f823090071ca997d867839cdfe6814d5af5f9428",
 }
 _HIDDEN_CACHE: dict[str, bool] = {}
 
@@ -185,32 +169,6 @@ _HIDDEN_CACHE: dict[str, bool] = {}
 FONT_CACHE_STARTED = "Building on-disk font cache"
 FONT_CACHE_FINISHED = "Finished building on-disk font cache"
 FONT_CACHE_GRACE = 15 * 60  # seconds
-
-
-def verapdf_patch(jar: str) -> tuple[str, str] | None:
-    """(classpath folder, main class) when the patch applies to this jar."""
-    if jar in _PATCH_CACHE:
-        return _PATCH_CACHE[jar]
-    result = None
-    try:
-        if (PATCH_ROOT / PATCHED_CLASS).is_file():
-            with zipfile.ZipFile(jar) as z:
-                bundled = hashlib.sha256(z.read(PATCHED_CLASS)).hexdigest()
-                manifest = z.read("META-INF/MANIFEST.MF").decode("utf-8", "replace")
-            main = next(
-                (
-                    line.split(":", 1)[1].strip()
-                    for line in manifest.splitlines()
-                    if line.startswith("Main-Class:")
-                ),
-                None,
-            )
-            if bundled in PATCH_TARGETS and main:
-                result = (str(PATCH_ROOT), main)
-    except (OSError, KeyError, zipfile.BadZipFile):
-        result = None
-    _PATCH_CACHE[jar] = result
-    return result
 
 
 def _main_class(jar: str) -> str | None:
@@ -254,19 +212,11 @@ def java_command(
     and the caller says so in the log.
     """
     command = [java, "-Djava.awt.headless=true", "-Dapple.awt.UIElement=true"]
-    folders: list[str] = []
-    main = None
-    if filter_hidden and hidden_text_patch(jar):
-        command.append(HIDDEN_PROPERTY)
-        folders.append(str(HIDDEN_PATCH_ROOT))
-        main = _main_class(jar)
-    patch = verapdf_patch(jar)
-    if patch:
-        folders.append(patch[0])
-        main = patch[1]
-    if folders and main:
-        # Classpath order decides which class loads: the patches, then the jar.
-        return [*command, "-cp", os.pathsep.join([*folders, jar]), main, *args]
+    main = _main_class(jar) if filter_hidden and hidden_text_patch(jar) else None
+    if main:
+        # Classpath order decides which class loads: the patch, then the jar.
+        classpath = os.pathsep.join([str(HIDDEN_PATCH_ROOT), jar])
+        return [*command, HIDDEN_PROPERTY, "-cp", classpath, main, *args]
     return [*command, "-jar", jar, *args]
 
 
@@ -576,7 +526,6 @@ class ConvertWorker(QObject):
 
         heap = max_heap_mb()
         self._emit(f"opendataloader-pdf {odl_version()}")
-        self._emit(tr("run.patch_on") if verapdf_patch(jar) else tr("run.patch_off"))
         if self.filter_hidden:
             self._emit(
                 tr("run.hidden_on") if hidden_text_patch(jar) else tr("run.hidden_partial")

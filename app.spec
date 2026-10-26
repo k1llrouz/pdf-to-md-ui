@@ -23,7 +23,7 @@ a = Analysis(
     pathex=[],
     binaries=odl_binaries,
     # patches/ and locales/ go next to converter.py and i18n.py inside the
-    # bundle, where PATCH_ROOT and LOCALE_DIR look for them.
+    # bundle, where HIDDEN_PATCH_ROOT and LOCALE_DIR look for them.
     datas=odl_datas
     + [
         ("patches", "patches"),

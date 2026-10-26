@@ -221,8 +221,6 @@
 
   "run.no_package": "Le paquet opendataloader-pdf n'est pas installé (pip install opendataloader-pdf).",
   "run.no_java": "Java introuvable. Installez Java 11 ou plus récent, ou réinstallez le programme — le bon Java est fourni avec.",
-  "run.patch_on": "correctif veraPDF : activé",
-  "run.patch_off": "correctif veraPDF : non appliqué à cette version",
   "run.hidden_on": "texte caché : écarté",
   "run.hidden_partial": "texte caché : cette version d’opendataloader-pdf n’écarte que le texte minuscule, hors page et des calques masqués ; le texte invisible ou de la couleur du fond reste",
   "run.inputs": "Fichiers en entrée : {count}",

@@ -221,8 +221,6 @@
 
   "run.no_package": "El paquete opendataloader-pdf no está instalado (pip install opendataloader-pdf).",
   "run.no_java": "No se encontró Java. Instale Java 11 o posterior, o vuelva a instalar el programa — incluye el Java adecuado.",
-  "run.patch_on": "parche de veraPDF: activado",
-  "run.patch_off": "parche de veraPDF: no se aplica a esta versión",
   "run.hidden_on": "texto oculto: descartado",
   "run.hidden_partial": "texto oculto: esta versión de opendataloader-pdf solo descarta texto diminuto, fuera de la página y de capas ocultas; el texto invisible o del color del fondo se queda",
   "run.inputs": "Archivos de entrada: {count}",

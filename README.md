@@ -49,8 +49,8 @@ walks through everything — [English](docs/guide.en.md),
 - **Big files don't hang it.** Every file has a timeout, a file that runs over
   is retried without images, and **Cancel** really stops the work. One broken
   PDF never stops the rest of the batch.
-- **Plot-heavy datasheets convert in seconds**, thanks to a fix for a memory
-  problem in the PDF parser (see [below](#the-verapdf-memory-fix)).
+- **Plot-heavy datasheets convert in seconds**, in 1 GB of memory (see
+  [below](#the-opendataloader-pdf-version)).
 - **Nothing gets overwritten.** Folders keep their structure in the results, and
   two files with the same name end up in separate folders.
 - **An annotated PDF** shows every detected table cell and text block on top of
@@ -141,19 +141,19 @@ The converter names every output after its input (`doc.md`, `doc_images/`,
 `doc_annotated.pdf`), so name clashes are resolved with folders: renaming the
 files would break the links from the `.md` to its images.
 
-### The veraPDF memory fix
+### The opendataloader-pdf version
 
-`requirements.txt` pins opendataloader-pdf **2.5.13**. From 2.5.9 on, it
-bundles a veraPDF whose line-art parsing needs memory quadratic in the number
-of strokes on a page: a 48-page TI datasheet went from 512 MB to about 14 GB.
-[patches/](patches/README.md) holds the one class that fixes it, loaded ahead
-of the jar; the output is byte-for-byte the same. The patch applies only to
-the exact jar it was measured against, and `tests/test_memory.py` tells when it
-is no longer needed. Reported upstream as
-[veraPDF/veraPDF-library#1641](https://github.com/veraPDF/veraPDF-library/issues/1641).
+`requirements.txt` pins opendataloader-pdf **2.5.15**. Releases 2.5.9 to
+2.5.13 bundled a veraPDF whose line-art parsing needed memory quadratic in the
+number of strokes on a page — a 48-page TI datasheet went from 512 MB to about
+14 GB — and this program shipped a replacement class for it until 2.2.0.
+Reported upstream as
+[veraPDF/veraPDF-library#1641](https://github.com/veraPDF/veraPDF-library/issues/1641)
+and fixed in 2.5.15, which converts the same datasheets in 1 GB on its own;
+`tests/test_memory.py` fails if a later release brings the problem back.
+Before raising the pin, read [patches/README.md](patches/README.md#upgrading-opendataloader-pdf).
 
-The version in use, and whether the patch is active, are printed at the top of
-the log.
+The version in use is printed at the top of the log.
 
 ### Translations
 
@@ -181,7 +181,7 @@ open — longer languages must not push the cards past the edge.
 | `updates.py` | Asks GitHub whether a newer release is out; downloads and starts its installer |
 | `i18n.py`, `locales/` | Interface languages |
 | `theme.py` | Colour palettes and generated stylesheet |
-| `patches/` | Classes loaded ahead of the jar: the veraPDF memory fix and the hidden-text switch |
+| `patches/` | The hidden-text switch, a class loaded ahead of the jar |
 | `tools/make_icon.py` | Draws `icon.ico` and `docs/icon.png` |
 | `docs/guide.*.md` | The user guide shown by Help → User guide |
 | `tests/` | pytest suite, the `table.pdf` fixture, a generator for plot-heavy pages |

@@ -1,9 +1,11 @@
-"""The veraPDF line-art patch: does it apply, does it help, is it still needed.
+"""Plot pages in a small heap, and the hidden-text switch (patches/hidden-text).
 
-See patches/README.md. The fixture is a page of 3000 separate strokes, built
-on the fly by tests/pdfgen.py - the shape of a datasheet's plot pages. Without
-the patch, opendataloader-pdf 2.5.13 needs well over 256 MB for it; with the
-patch, 64 MB is enough. The tests run it in 128 MB.
+The fixture is a page of 3000 separate strokes, built on the fly by
+tests/pdfgen.py - the shape of a datasheet's plot pages. opendataloader-pdf
+2.5.9 to 2.5.13 needed memory quadratic in the number of strokes for it (well
+over 256 MB; a 48-page TI datasheet needed 14 GB), which the app worked around
+with a veraPDF class of its own. 2.5.15 fixed it upstream; the tests run the
+page in 128 MB so that a release bringing it back fails here.
 """
 
 import os
@@ -14,7 +16,6 @@ import pytest
 
 import converter
 from converter import ConvertWorker, Job
-from i18n import tr
 from tests.pdfgen import dense_line_pdf
 
 HEAP_MB = 128
@@ -31,57 +32,7 @@ def dense_pdf(tmp_path):
     return dense_line_pdf(tmp_path / "plots.pdf", STROKES)
 
 
-# -- when the patch applies ------------------------------------------------- #
-
-
-@needs_java
-def test_patch_applies_to_the_pinned_release():
-    patch = converter.verapdf_patch(converter.jar_path())
-
-    assert patch is not None, (
-        "the installed opendataloader-pdf is not the one the patch was measured "
-        "against - see patches/README.md"
-    )
-    folder, main = patch
-    assert main == "org.opendataloader.pdf.cli.CLIMain"
-
-
-def fake_jar(path, chunkparser: bytes):
-    with zipfile.ZipFile(path, "w") as z:
-        z.writestr("META-INF/MANIFEST.MF", "Main-Class: some.Main\n")
-        z.writestr(converter.PATCHED_CLASS, chunkparser)
-    return str(path)
-
-
-def test_any_other_jar_runs_untouched(tmp_path):
-    jar = fake_jar(tmp_path / "other.jar", b"a different ChunkParser")
-
-    assert converter.verapdf_patch(jar) is None
-    command = converter.java_command("java", jar, ["in.pdf"])
-    assert command[-3:] == ["-jar", jar, "in.pdf"]
-    assert "-cp" not in command
-
-
-def test_unreadable_jar_runs_untouched(tmp_path):
-    broken = tmp_path / "broken.jar"
-    broken.write_bytes(b"not a zip")
-
-    assert converter.verapdf_patch(str(broken)) is None
-    assert converter.verapdf_patch(str(tmp_path / "missing.jar")) is None
-
-
-@needs_java
-def test_patched_command_puts_the_patch_first():
-    jar = converter.jar_path()
-
-    command = converter.java_command("java", jar, ["in.pdf"])
-
-    cp = command[command.index("-cp") + 1].split(converter.os.pathsep)
-    assert cp == [str(converter.PATCH_ROOT), jar]
-    assert command[-2:] == ["org.opendataloader.pdf.cli.CLIMain", "in.pdf"]
-
-
-# -- what it buys ------------------------------------------------------------ #
+# -- plot pages ---------------------------------------------------------------- #
 
 
 @needs_java
@@ -104,13 +55,12 @@ def test_plot_pages_convert_in_a_small_heap(qapp, dense_pdf, tmp_path, monkeypat
     assert "OutOfMemoryError" not in text
     assert result["ok"] == 1, text[-2000:]
     assert "Typical Characteristics" in (out / "plots.md").read_text(encoding="utf-8")
-    assert tr("run.patch_on") in text
 
 
 @needs_java
-def test_patch_still_needed(dense_pdf, tmp_path):
-    """The unpatched jar must still fail here; when it stops failing, upstream
-    has fixed the regression and patches/verapdf should go."""
+def test_pinned_jar_handles_dense_line_art(dense_pdf, tmp_path):
+    """The bare jar, nothing in front of it on the classpath: veraPDF's line-art
+    memory regression (veraPDF-library#1641) must stay fixed."""
     out = tmp_path / "out"
     out.mkdir()
     result = subprocess.run(
@@ -126,10 +76,22 @@ def test_patch_still_needed(dense_pdf, tmp_path):
         timeout=300,
     )
 
-    assert "OutOfMemoryError" in result.stdout + result.stderr, (
-        "opendataloader-pdf now handles dense line art without the patch: "
-        "remove patches/verapdf - see patches/README.md"
+    output = result.stdout + result.stderr
+    assert "OutOfMemoryError" not in output, (
+        "opendataloader-pdf needs far more memory for dense line art again - "
+        "see patches/README.md"
     )
+    assert result.returncode == 0, output[-2000:]
+    assert (out / "plots.md").is_file()
+
+
+def test_plain_command_runs_the_jar_as_is():
+    jar = converter.jar_path()
+
+    command = converter.java_command("java", jar, ["in.pdf"])
+
+    assert command[-3:] == ["-jar", jar, "in.pdf"]
+    assert "-cp" not in command
 
 
 # -- the hidden-text switch (patches/hidden-text) ------------------------------------------------- #
@@ -165,3 +127,13 @@ def test_hidden_text_switch_skips_a_jar_it_does_not_fit(tmp_path):
 
     assert converter.HIDDEN_PROPERTY not in command
     assert command[-3:-1] == ["-jar", str(jar)]
+
+
+def test_hidden_text_switch_skips_an_unreadable_jar(tmp_path):
+    broken = tmp_path / "broken.jar"
+    broken.write_bytes(b"not a zip")
+
+    assert not converter.hidden_text_patch(str(broken))
+    assert not converter.hidden_text_patch(str(tmp_path / "missing.jar"))
+    command = converter.java_command("java", str(broken), ["in.pdf"], filter_hidden=True)
+    assert command[-3:] == ["-jar", str(broken), "in.pdf"]

@@ -1,5 +1,15 @@
 # Changes
 
+## Unreleased
+
+- **opendataloader-pdf 2.5.15** (was 2.5.13). The memory problem with
+  plot-heavy datasheets that the program worked around with its own veraPDF
+  class is fixed upstream (reported as veraPDF-library#1641), so the
+  workaround is gone; the datasheets still convert in seconds in 1 GB. On 57
+  test datasheets the Markdown is byte-for-byte the same as before. The log no
+  longer has the "veraPDF patch" line.
+- **Drop hidden text** rebuilt for 2.5.15 and works as before.
+
 ## 2.2.0
 
 The program now updates itself in one click.

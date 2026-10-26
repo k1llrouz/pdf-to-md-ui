@@ -221,8 +221,6 @@
 
   "run.no_package": "The opendataloader-pdf package is not installed (pip install opendataloader-pdf).",
   "run.no_java": "Java not found. Install Java 11 or newer, or reinstall the program — the right Java comes with it.",
-  "run.patch_on": "veraPDF patch: on",
-  "run.patch_off": "veraPDF patch: not applied to this version",
   "run.hidden_on": "hidden text: dropped",
   "run.hidden_partial": "hidden text: this opendataloader-pdf version can only drop tiny, off-page and hidden-layer text; invisible and same-colour text stays",
   "run.inputs": "Input files: {count}",
