@@ -1,6 +1,8 @@
 # Changes
 
-## Unreleased
+## 2.2.1
+
+The converter engine updated; results are the same, the program is simpler.
 
 - **opendataloader-pdf 2.5.15** (was 2.5.13). The memory problem with
   plot-heavy datasheets that the program worked around with its own veraPDF
