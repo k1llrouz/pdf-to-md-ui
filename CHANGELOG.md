@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 2.2.3
 
 - **Updates no longer leave 90 MB behind.** Each update left its downloaded
   installer in the Windows temporary folder. The program now removes it the
