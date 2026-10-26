@@ -1,6 +1,8 @@
 # Changes
 
-## Unreleased
+## 2.2.2
+
+Fixes for updating from inside the program.
 
 - **About showed the old opendataloader-pdf version after an update.** The
   installer only added and overwrote files, so the old package's version
