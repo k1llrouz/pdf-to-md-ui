@@ -93,6 +93,13 @@ spanish.ContextMenuTask=Añadir «Abrir en PDF → Markdown» al menú contextua
 italian.ContextOpen=Apri in PDF → Markdown
 italian.ContextMenuTask=Aggiungi «Apri in PDF → Markdown» al menu contestuale di Esplora file
 
+; The program's own files are cleared before the new ones go in: [Files] only
+; adds and overwrites, so a file the new version no longer has would stay - an
+; old opendataloader_pdf-*.dist-info made About show the old version, and an
+; old patch folder could be picked up again. Settings are not kept here.
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Files]
 Source: "dist\{#AppName}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 

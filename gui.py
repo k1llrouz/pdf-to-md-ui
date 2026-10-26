@@ -2270,13 +2270,15 @@ _downloads: list = []
 
 def _download_update(window: MainWindow, release: dict) -> None:
     download = updates.UpdateDownload(release)
-    dialog = QProgressDialog(
-        tr("update.downloading", version=release["version"]),
-        tr("action.cancel"),
-        0,
-        100,
-        window,
-    )
+    label = tr("update.downloading", version=release["version"])
+    dialog = QProgressDialog(label, tr("action.cancel"), 0, 100, window)
+    # The theme's progress bar is a thin 6 px strip with no room for text, so
+    # the percentage goes into the label instead, and the window gets a width
+    # that fits the label in any language.
+    bar = QProgressBar(dialog)
+    bar.setTextVisible(False)
+    dialog.setBar(bar)
+    dialog.setMinimumWidth(420)
     dialog.setWindowTitle(APP_NAME)
     dialog.setWindowModality(Qt.WindowModality.WindowModal)
     dialog.setMinimumDuration(0)
@@ -2284,9 +2286,12 @@ def _download_update(window: MainWindow, release: dict) -> None:
     dialog.setAutoReset(False)
     dialog.setValue(0)
     dialog.canceled.connect(download.cancel)
-    download.progress.connect(
-        lambda done, total: dialog.setValue(min(100, done * 100 // max(total, 1)))
-    )
+    def show_progress(done: int, total: int) -> None:
+        percent = min(100, done * 100 // max(total, 1))
+        dialog.setValue(percent)
+        dialog.setLabelText(f"{label}  {percent}%")
+
+    download.progress.connect(show_progress)
     download.finished.connect(
         lambda path, error: _update_downloaded(download, dialog, release, path, error)
     )

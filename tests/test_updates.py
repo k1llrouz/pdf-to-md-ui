@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import time
+from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QEvent, Qt, QUrl
@@ -378,6 +379,40 @@ def test_the_link_installs_the_update(on_screen, dialogs, opened, installable):
     assert installable["quit"] == 1
     assert opened == []
     assert on_screen.update_link.toolTip() == gui.tr("update.install_tooltip")
+
+
+def test_the_download_window_shows_the_percentage(
+    on_screen, monkeypatch, dialogs, opened, installable
+):
+    # The theme's progress bar is too thin for text: the percentage goes into
+    # the label, and the window is wide enough for it.
+    seen = []
+
+    def download(release, progress, cancelled):
+        progress(45, 100)
+        return installable["setup"]
+
+    installable["download"] = download
+    original = gui.QProgressDialog.setLabelText
+    monkeypatch.setattr(
+        gui.QProgressDialog,
+        "setLabelText",
+        lambda self, text: (seen.append((text, self.minimumWidth())), original(self, text)),
+    )
+
+    click_the_link(on_screen, INSTALLABLE)
+
+    label = gui.tr("update.downloading", version="99.0.0")
+    assert (f"{label}  45%", 420) in seen
+
+
+def test_the_installer_clears_the_old_program_files():
+    # [Files] only adds and overwrites: without this an old
+    # opendataloader_pdf-*.dist-info stays and About shows the old version.
+    script = Path(__file__).resolve().parent.parent / "installer.iss"
+    section = script.read_text(encoding="utf-8-sig").split("[InstallDelete]", 1)[1]
+    section = section.split("\n[", 1)[0]
+    assert r'Type: filesandordirs; Name: "{app}\_internal"' in section
 
 
 def test_the_manual_check_offers_the_install(on_screen, monkeypatch, dialogs, opened, installable):

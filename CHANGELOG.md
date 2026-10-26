@@ -1,5 +1,16 @@
 # Changes
 
+## Unreleased
+
+- **About showed the old opendataloader-pdf version after an update.** The
+  installer only added and overwrote files, so the old package's version
+  file stayed next to the new one (and the old veraPDF patch folder with
+  it). It now clears the program's own files before installing; settings
+  are kept. Copies updated to 2.2.1 still show "2.5.13" until the next
+  update, though they already run 2.5.15.
+- **The update download window** was too narrow and cut the percentage off.
+  It is wider now, with the percentage next to the text.
+
 ## 2.2.1
 
 The converter engine updated; results are the same, the program is simpler.
