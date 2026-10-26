@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import urllib.request
 from pathlib import Path
 
@@ -35,6 +36,9 @@ INSTALLER_NAME = "PDF-to-Markdown-Setup.exe"
 DOWNLOAD_PREFIX = "https://github.com/k1llrouz/pdf-to-md-ui/releases/download/"
 DOWNLOAD_TIMEOUT = 30  # seconds without a byte before giving up
 CHUNK = 64 * 1024
+# The folder each download goes to; remove_old_downloads() clears old ones.
+TEMP_PREFIX = "pdf-to-md-update-"
+KEEP_UPDATE_LOGS = 7 * 24 * 3600  # seconds
 # Inno Setup's switches: a progress window and nothing to answer; the install
 # folder, language and tasks are those of the copy already there. RELAUNCH is
 # the program's own (installer.iss): start it again when done.
@@ -145,7 +149,7 @@ def download_installer(release: dict, progress=None, cancelled=None) -> Path:
     OSError, ValueError for a mismatch, DownloadCancelled when stopped.
     """
     total = release["size"]
-    folder = Path(tempfile.mkdtemp(prefix="pdf-to-md-update-"))
+    folder = Path(tempfile.mkdtemp(prefix=TEMP_PREFIX))
     target = folder / INSTALLER_NAME
     partial = folder / (INSTALLER_NAME + ".part")
     request = urllib.request.Request(
@@ -179,6 +183,28 @@ def download_installer(release: dict, progress=None, cancelled=None) -> Path:
         _remove(folder)
         raise
     return target
+
+
+def remove_old_downloads(now: float | None = None) -> None:
+    """Clear what earlier updates left in the temporary folder.
+
+    The installer cannot delete itself, so every update leaves its ~90 MB
+    Setup.exe behind. Called at startup: the installer goes at once (if it is
+    still running, the file is in use and stays until the next start), its
+    log - the one thing to look at when an update went wrong - after a week.
+    """
+    now = time.time() if now is None else now
+    for folder in Path(tempfile.gettempdir()).glob(TEMP_PREFIX + "*"):
+        try:
+            if not folder.is_dir():
+                continue
+            if now - folder.stat().st_mtime > KEEP_UPDATE_LOGS:
+                _remove(folder)
+                continue
+            for item in folder.glob("*.exe"):
+                item.unlink()
+        except OSError:
+            pass
 
 
 def _remove(folder: Path) -> None:

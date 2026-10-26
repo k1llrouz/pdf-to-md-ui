@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import os
 import time
 from pathlib import Path
 
@@ -313,6 +314,29 @@ def test_without_a_checksum_the_size_has_to_do(server):
     release = {k: v for k, v in INSTALLABLE.items() if k != "sha256"}
 
     assert updates.download_installer(release).read_bytes() == SETUP
+
+
+def test_old_downloads_are_cleared(monkeypatch, tmp_path):
+    # Each update leaves its Setup.exe behind; the next start removes it at
+    # once and the rest of the folder (the install log) after a week.
+    monkeypatch.setattr(updates.tempfile, "gettempdir", lambda: str(tmp_path))
+    recent = tmp_path / (updates.TEMP_PREFIX + "recent")
+    old = tmp_path / (updates.TEMP_PREFIX + "old")
+    other = tmp_path / "someone-elses"
+    for folder in (recent, old, other):
+        folder.mkdir()
+        (folder / updates.INSTALLER_NAME).write_bytes(SETUP)
+        (folder / "install.log").write_text("log")
+    now = time.time()
+    week_ago = now - updates.KEEP_UPDATE_LOGS - 60
+    os.utime(old, (week_ago, week_ago))
+
+    updates.remove_old_downloads(now)
+
+    assert not (recent / updates.INSTALLER_NAME).exists()
+    assert (recent / "install.log").exists()
+    assert not old.exists()
+    assert (other / updates.INSTALLER_NAME).exists(), "not ours"
 
 
 def test_the_installer_runs_silently_and_detached(monkeypatch, tmp_path):

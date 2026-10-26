@@ -2412,6 +2412,7 @@ def main() -> int:
     if not instance.start(paths):
         return 0  # handed over to the window that is already open
     instance.received.connect(bring_forward)
+    updates.remove_old_downloads()
     i18n.set_language(app_settings().value("language") or i18n.system_language())
     window = open_window()
     window.add_paths(paths)

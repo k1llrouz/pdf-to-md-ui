@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+- **Updates no longer leave 90 MB behind.** Each update left its downloaded
+  installer in the Windows temporary folder. The program now removes it the
+  next time it starts; the installer's log stays for a week, in case an
+  update went wrong.
+
 ## 2.2.2
 
 Fixes for updating from inside the program.
